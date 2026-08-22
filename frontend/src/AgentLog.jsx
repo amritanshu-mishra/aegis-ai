@@ -1,52 +1,204 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
-const BG   = { PROTECT:'#FCEBEB', RECOVER:'#EAF3DE', WARN:'#FAEEDA', MONITOR:'#f7f7f7' };
-const BORD = { PROTECT:'#E24B4A', RECOVER:'#1D9E75', WARN:'#EF9F27', MONITOR:'#ddd' };
-const LBL  = { PROTECT:'Protection triggered', RECOVER:'Recovery triggered', WARN:'Warning issued', MONITOR:'Monitoring' };
+const CONFIG = {
+  PROTECT: { border: '#FF4D4D', bg: 'rgba(255,77,77,0.08)', label: '🛡️ Protection Triggered', icon: '🚨' },
+  RECOVER: { border: '#00C896', bg: 'rgba(0,200,150,0.08)', label: '📈 Recovery Triggered',   icon: '✅' },
+  WARN:    { border: '#FFB800', bg: 'rgba(255,184,0,0.08)',  label: '⚠️ Warning Issued',        icon: '⚠️' },
+  MONITOR: { border: 'rgba(255,255,255,0.08)', bg: 'rgba(255,255,255,0.02)', label: '👁️ Monitoring', icon: '🔵' },
+};
 
-export default function AgentLog() {
+const AgentBadge = ({ agent }) => (
+  <span style={{
+    fontSize: 10, padding: '2px 8px', borderRadius: 20,
+    background: 'rgba(255,255,255,0.06)',
+    border: '1px solid rgba(255,255,255,0.1)',
+    color: 'rgba(255,255,255,0.4)',
+    letterSpacing: '0.3px'
+  }}>{agent}</span>
+);
+
+export default function AgentLog({ accentColor }) {
   const [logs, setLogs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [newCount, setNewCount] = useState(0);
 
   useEffect(() => {
-    const fetch = () => axios.get('/api/agent-log').then(r => setLogs(r.data)).catch(() => {});
+    const fetch = () => {
+      axios.get('/api/agent-log').then(r => {
+        setLogs(prev => {
+          if (prev.length && r.data.length > prev.length) {
+            setNewCount(r.data.length - prev.length);
+            setTimeout(() => setNewCount(0), 3000);
+          }
+          return r.data;
+        });
+        setLoading(false);
+      }).catch(() => { setLoading(false); });
+    };
     fetch();
     const i = setInterval(fetch, 15000);
     return () => clearInterval(i);
   }, []);
 
-  if (!logs.length) return (
-    <div style={{ padding: 60, textAlign: 'center', color: '#aaa' }}>
-      No agent decisions yet — check back in 60 seconds.
-    </div>
-  );
+  const actionCounts = logs.reduce((acc, l) => {
+    acc[l.action] = (acc[l.action] || 0) + 1;
+    return acc;
+  }, {});
 
   return (
     <div>
-      <div style={{ fontSize: 13, color: '#888', marginBottom: 16 }}>
-        Agent decisions — refreshes every 15 seconds
-      </div>
-      {logs.map((log, i) => (
-        <div key={i} style={{
-          background: BG[log.action]  || '#f7f7f7',
-          border: `1px solid ${BORD[log.action] || '#ddd'}`,
-          borderRadius: 10, padding: '12px 14px', marginBottom: 10
-        }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-            <div>
-              <span style={{ fontSize: 12, fontWeight: 700, color: BORD[log.action] }}>
-                {LBL[log.action] || log.action}
-              </span>
-              <span style={{ fontSize: 11, color: '#aaa', marginLeft: 8 }}>{log.agent}</span>
-            </div>
-            <span style={{ fontSize: 11, color: '#bbb' }}>
-              {new Date(log.timestamp).toLocaleTimeString()}
-            </span>
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 24 }}>
+        <div>
+          <div style={{ fontSize: 22, fontWeight: 700, color: '#fff', marginBottom: 6 }}>Agent Decision Log</div>
+          <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)' }}>
+            Every action explained in plain English — powered by Claude AI
           </div>
-          <div style={{ fontSize: 13, color: '#333', lineHeight: 1.6 }}>{log.reason}</div>
-          <div style={{ fontSize: 11, color: '#aaa', marginTop: 6 }}>Score: {log.score}/100</div>
         </div>
-      ))}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          {newCount > 0 && (
+            <div style={{
+              padding: '4px 10px', borderRadius: 20, fontSize: 11,
+              background: `${accentColor}20`, color: accentColor,
+              border: `1px solid ${accentColor}40`
+            }}>+{newCount} new</div>
+          )}
+          <div style={{
+            padding: '4px 10px', borderRadius: 20, fontSize: 11,
+            background: 'rgba(255,255,255,0.04)',
+            color: 'rgba(255,255,255,0.4)',
+            border: '1px solid rgba(255,255,255,0.08)'
+          }}>Auto-refresh 15s</div>
+        </div>
+      </div>
+
+      {/* Summary stats */}
+      {logs.length > 0 && (
+        <div style={{ display: 'flex', gap: 10, marginBottom: 20 }}>
+          {Object.entries(actionCounts).map(([action, count]) => {
+            const cfg = CONFIG[action] || CONFIG.MONITOR;
+            return (
+              <div key={action} style={{
+                padding: '8px 14px', borderRadius: 10,
+                background: cfg.bg, border: `1px solid ${cfg.border}30`,
+                fontSize: 12
+              }}>
+                <span style={{ color: cfg.border, fontWeight: 600 }}>{count}×</span>
+                <span style={{ color: 'rgba(255,255,255,0.4)', marginLeft: 6 }}>{action}</span>
+              </div>
+            );
+          })}
+          <div style={{
+            marginLeft: 'auto', padding: '8px 14px', borderRadius: 10,
+            background: 'rgba(255,255,255,0.03)',
+            border: '1px solid rgba(255,255,255,0.07)',
+            fontSize: 12, color: 'rgba(255,255,255,0.4)'
+          }}>
+            {logs.length} total decisions
+          </div>
+        </div>
+      )}
+
+      {/* Claude API notice */}
+      <div style={{
+        padding: '10px 16px', borderRadius: 10, marginBottom: 20,
+        background: `rgba(124,58,237,0.08)`,
+        border: '1px solid rgba(124,58,237,0.2)',
+        display: 'flex', alignItems: 'center', gap: 10, fontSize: 12
+      }}>
+        <span style={{ fontSize: 16 }}>🤖</span>
+        <span style={{ color: 'rgba(255,255,255,0.5)' }}>
+          Decision explanations are generated by{' '}
+          <span style={{ color: '#A78BFA', fontWeight: 600 }}>Claude AI (Anthropic)</span>
+          {' '}— translating market data into plain English for retail investors
+        </span>
+      </div>
+
+      {/* Logs */}
+      {loading ? (
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          height: 200, color: 'rgba(255,255,255,0.3)'
+        }}>
+          Loading agent decisions...
+        </div>
+      ) : !logs.length ? (
+        <div style={{
+          padding: 40, textAlign: 'center',
+          background: 'rgba(255,255,255,0.02)',
+          border: '1px solid rgba(255,255,255,0.06)',
+          borderRadius: 16,
+          color: 'rgba(255,255,255,0.3)'
+        }}>
+          <div style={{ fontSize: 32, marginBottom: 12 }}>🔍</div>
+          <div style={{ fontSize: 14, marginBottom: 6 }}>No decisions yet</div>
+          <div style={{ fontSize: 12 }}>Agent fires every 60 seconds — check back shortly</div>
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {logs.map((log, i) => {
+            const cfg = CONFIG[log.action] || CONFIG.MONITOR;
+            const isNew = i === 0;
+            return (
+              <div key={i} style={{
+                background: cfg.bg,
+                border: `1px solid ${cfg.border}${isNew ? '60' : '25'}`,
+                borderRadius: 12, padding: '14px 16px',
+                transition: 'all 0.3s ease',
+                position: 'relative', overflow: 'hidden'
+              }}>
+                {/* Top line accent */}
+                {isNew && (
+                  <div style={{
+                    position: 'absolute', top: 0, left: 0, right: 0, height: 1,
+                    background: `linear-gradient(90deg, transparent, ${cfg.border}, transparent)`
+                  }}/>
+                )}
+
+                {/* Header row */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+                  <span style={{ fontSize: 14 }}>{cfg.icon}</span>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: cfg.border }}>
+                    {cfg.label}
+                  </span>
+                  <AgentBadge agent={log.agent} />
+                  {isNew && (
+                    <span style={{
+                      fontSize: 9, padding: '1px 6px', borderRadius: 10,
+                      background: `${accentColor}30`, color: accentColor,
+                      fontWeight: 700, letterSpacing: '0.5px'
+                    }}>LATEST</span>
+                  )}
+                  <div style={{ marginLeft: 'auto', fontSize: 11, color: 'rgba(255,255,255,0.25)' }}>
+                    {new Date(log.timestamp).toLocaleTimeString()}
+                  </div>
+                </div>
+
+                {/* Reason text */}
+                <div style={{
+                  fontSize: 13, color: 'rgba(255,255,255,0.7)',
+                  lineHeight: 1.6, marginBottom: 10
+                }}>
+                  {log.reason}
+                </div>
+
+                {/* Score pill */}
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <span style={{
+                    fontSize: 11, padding: '2px 10px', borderRadius: 20,
+                    background: 'rgba(255,255,255,0.05)',
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    color: 'rgba(255,255,255,0.4)'
+                  }}>
+                    Stress score: <strong style={{ color: cfg.border }}>{log.score}/100</strong>
+                  </span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
