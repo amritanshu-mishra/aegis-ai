@@ -1,60 +1,122 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import Dashboard from './Dashboard';
-import Backtest from './Backtest';
-import Onboarding from './Onboarding';
-import AgentLog from './AgentLog';
+import { useState } from 'react'
+import reactLogo from './assets/react.svg'
+import viteLogo from './assets/vite.svg'
+import heroImg from './assets/hero.png'
+import './App.css'
 
-export default function App() {
-  const [page, setPage] = useState('dashboard');
-  const [signals, setSignals] = useState(null);
-  const [portfolio, setPortfolio] = useState(null);
-
-  useEffect(() => {
-    const fetchData = () => {
-      axios.get('/api/signals').then(r => setSignals(r.data)).catch(() => {});
-      axios.get('/api/portfolio').then(r => setPortfolio(r.data)).catch(() => {});
-    };
-    fetchData();
-    const interval = setInterval(fetchData, 30000);
-    return () => clearInterval(interval);
-  }, []);
-
-  const pages = [
-    { id: 'dashboard', label: 'Live' },
-    { id: 'backtest',  label: 'Backtest' },
-    { id: 'log',       label: 'Agent Log' },
-    { id: 'setup',     label: 'Setup' },
-  ];
+function App() {
+  const [count, setCount] = useState(0)
 
   return (
-    <div style={{ maxWidth: 920, margin: '0 auto', padding: '0 20px',
-      fontFamily: 'system-ui, sans-serif' }}>
-      <div style={{ display: 'flex', alignItems: 'center',
-        justifyContent: 'space-between', padding: '16px 0',
-        borderBottom: '1px solid #eee', marginBottom: 20 }}>
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
-          <span style={{ fontWeight: 700, fontSize: 22, color: '#0C1B33' }}>Aegis</span>
-          <span style={{ fontWeight: 700, fontSize: 22, color: '#E24B4A' }}>AI</span>
-          <span style={{ fontSize: 11, color: '#aaa', marginLeft: 4 }}>
-            autonomous portfolio protection
-          </span>
+    <>
+      <section id="center">
+        <div className="hero">
+          <img src={heroImg} className="base" width="170" height="179" alt="" />
+          <img src={reactLogo} className="framework" alt="React logo" />
+          <img src={viteLogo} className="vite" alt="Vite logo" />
         </div>
-        <div style={{ display: 'flex', gap: 6 }}>
-          {pages.map(p => (
-            <button key={p.id} onClick={() => setPage(p.id)} style={{
-              padding: '6px 14px', border: '1px solid #ddd',
-              borderRadius: 20, cursor: 'pointer', fontSize: 12,
-              background: page === p.id ? '#0C1B33' : 'transparent',
-              color: page === p.id ? '#fff' : '#555'
-            }}>{p.label}</button>
-          ))}
+        <div>
+          <h1>Get started</h1>
+          <p>
+            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
+          </p>
         </div>
-      </div>
-      {page === 'dashboard' && <Dashboard signals={signals} portfolio={portfolio} />}
-      {page === 'backtest'  && <Backtest />}
-      {page === 'log'       && <AgentLog />}
-      {page === 'setup'     && <Onboarding />}
-    </div>
-  );
+        <button
+          type="button"
+          className="counter"
+          onClick={() => setCount((count) => count + 1)}
+        >
+          Count is {count}
+        </button>
+      </section>
+
+      <div className="ticks"></div>
+
+      <section id="next-steps">
+        <div id="docs">
+          <svg className="icon" role="presentation" aria-hidden="true">
+            <use href="/icons.svg#documentation-icon"></use>
+          </svg>
+          <h2>Documentation</h2>
+          <p>Your questions, answered</p>
+          <ul>
+            <li>
+              <a href="https://vite.dev/" target="_blank">
+                <img className="logo" src={viteLogo} alt="" />
+                Explore Vite
+              </a>
+            </li>
+            <li>
+              <a href="https://react.dev/" target="_blank">
+                <img className="button-icon" src={reactLogo} alt="" />
+                Learn more
+              </a>
+            </li>
+          </ul>
+        </div>
+        <div id="social">
+          <svg className="icon" role="presentation" aria-hidden="true">
+            <use href="/icons.svg#social-icon"></use>
+          </svg>
+          <h2>Connect with us</h2>
+          <p>Join the Vite community</p>
+          <ul>
+            <li>
+              <a href="https://github.com/vitejs/vite" target="_blank">
+                <svg
+                  className="button-icon"
+                  role="presentation"
+                  aria-hidden="true"
+                >
+                  <use href="/icons.svg#github-icon"></use>
+                </svg>
+                GitHub
+              </a>
+            </li>
+            <li>
+              <a href="https://chat.vite.dev/" target="_blank">
+                <svg
+                  className="button-icon"
+                  role="presentation"
+                  aria-hidden="true"
+                >
+                  <use href="/icons.svg#discord-icon"></use>
+                </svg>
+                Discord
+              </a>
+            </li>
+            <li>
+              <a href="https://x.com/vite_js" target="_blank">
+                <svg
+                  className="button-icon"
+                  role="presentation"
+                  aria-hidden="true"
+                >
+                  <use href="/icons.svg#x-icon"></use>
+                </svg>
+                X.com
+              </a>
+            </li>
+            <li>
+              <a href="https://bsky.app/profile/vite.dev" target="_blank">
+                <svg
+                  className="button-icon"
+                  role="presentation"
+                  aria-hidden="true"
+                >
+                  <use href="/icons.svg#bluesky-icon"></use>
+                </svg>
+                Bluesky
+              </a>
+            </li>
+          </ul>
+        </div>
+      </section>
+
+      <div className="ticks"></div>
+      <section id="spacer"></section>
+    </>
+  )
 }
+
+export default App
