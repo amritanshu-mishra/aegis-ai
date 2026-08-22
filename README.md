@@ -8,7 +8,7 @@
 
 ---
 
-## Round 2 Challenge — #586
+## Challenge
 
 **Challenge:** Evidence Handling: Progress View
 
